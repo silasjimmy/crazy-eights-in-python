@@ -6,292 +6,248 @@ Created on Wed Apr 15 08:38:11 2020
 @author: silasjimmy
 """
 
-import random
-
-from CrazyEights import Card, DiscardPile, DrawPile, Hand
-            
-class Computer(Hand):
-    '''
-    Defines the computer's hand
-    '''
-    def __init__(self, cards):
-        super().__init__(cards)
-        
-    def get_playable_card(self, top_card):
-        '''
-        Checks for a card matching the suit or rank of the top card in the discard pile.
-        top_card (Card object): The card on the top of the discard pile.
-        Returns (Card object) the card found, None if not.
-        '''
-        for index, card in enumerate(self.cards):
-            if card.suit == top_card.suit or card.value == top_card.value:
-                drop = self.drop_card(index)
-                return drop
-    
-    def check_for_eight(self):
-        '''
-        Checks the hand for an 8.
-        Returns (Card object) the card found, None if not.
-        '''
-        for index, card in enumerate(self.cards):
-            if card.value.isdigit() and int(card.value) == 8:
-                drop = self.drop_card(index)
-                return drop
-            
-    def get_card_with_suit(self, specific_suit):
-        '''
-        Gets the card with the specified suit.
-        specific_suit (str): The suit to find.
-        Returns (Card object) the card found, None if not.
-        '''
-        for index, card in enumerate(self.cards):
-            if card.suit == specific_suit:
-                drop = self.drop_card(index)
-                return drop
-    
-    def play(self, top_card=None, specific_suit=None):
-        '''
-        Defines how the computer plays.
-        top_card (Card object): The top card in the discard pile.
-        specific_suit (str): The suit chosen by the player.
-        Returns (str, Card object) the suit chosen in case an * was played and the card played.
-        '''
-        suit = None
-        
-        # Play if it is a specific suit
-        if specific_suit:
-            # PLay card if found a card with specific suit
-            card = self.get_card_with_suit(specific_suit)
-            if card and card.value.isdigit() and int(card.value) == 8:
-                suit = random.choice(list(set([card.suit for card in self.cards])))
-                return suit, card
-            # Play card if found no card and there is an 8
-            eight = self.check_for_eight()
-            if eight:
-                suit = random.choice(list(set([card.suit for card in self.cards])))
-                return suit, eight
-        
-        if top_card:
-            # Play if it is has a card matching the top card in discard pile
-            playable_card = self.get_playable_card(top_card)
-            if playable_card:
-                return suit, playable_card
-            
-            # Play if has an 8
-            eight = self.check_for_eight()
-            if eight:
-                suit = random.choice(list(set([card.suit for card in self.cards])))
-                return suit, eight
-        return suit, None
+from CrazyEights import DiscardPile, DrawPile, Hand, Computer
 
 class Game:
     def __init__(self):
+        self.player_points = 0
+        self.computer_points = 0
+        
         print("######################")
-        print("##### Crazy Eights####")
+        print("#### Crazy Eights ####")
         print("######################")
         print("\nWelcome to the card game Crazy Eights!")
-        self.play_game()
+        print("\n*** The goal is to reach 100 points. The first player to get the points is the winner. ***")
+        print("\nStart the game!")
+        print("\n######################")
+        
+        while True:
+            winner, points = self.play_game()
+            self.update_player_points(winner, points)
+            if self.player_points >= 100 or self.computer_points >= 100:
+                break
+            print("\n#### No player has reached the 100 points target. Start a new game ####")
+            
+        print("\n######################")
+        print("#### Game over! ######")
+        print("######################")
+              
+        if self.player_points > self.computer_points:
+            print("\nCongratulations!! You win!")
+            print("Your total points are:", self.player_points)
+        else:
+            print("\nAaw, sorry buddy. You lost to the computer.")
+            print("The computer's total points are:", self.computer_points)
+            
+        print("\n########################################")
+        print("#### Thanks for playing the game! ######")
+        print("########################################")
     
     def play_game(self):
         '''
         Initiates and controls the game.
+        Returns (str, int) the winner of the hand and the points acquired.
         '''
-        # Create the draw pil
+        # Create and shuffle the draw pile
         draw_pile = DrawPile()
-        # Shuffle the draw pile
         draw_pile.shuffle()
         
         # Create the discard pile
         discard_pile = DiscardPile()
         
-        # Deal each player 7 cards
+        # Deal each player 7 cards and create their hands
         player_cards = draw_pile.deal_player_cards()
         comp_cards = draw_pile.deal_player_cards()
-        
-        # Create the player hands
-        cardz = [Card("Spades", "3"), Card("Clubs", "8"), Card("Diamonds", "Q")]
-        carnz = [Card("Hearts", "4"), Card("Spades", "8"), Card("Clubs", "9")]
-        player = Hand(cardz)
-        computer = Computer(carnz)
+        player = Hand(player_cards)
+        computer = Computer(comp_cards)
         
         # Draw the starting card
-        self.top_card = Card("Clubs", "4")# draw_pile.draw_card()
+        self.top_card = draw_pile.draw_card()
         
-        # Set the suit and rank of the top card
-        self.top_card_suit = self.top_card.suit
-        self.top_card_rank = self.top_card.value
+        # Set the suit of the top card to None
+        self.top_card_suit = None
         
         # Add the start card to the discard pile
         discard_pile.add_card(self.top_card)
         
-        # Track the winner
+        # Game variables
         self.winner = None
-        # Track if 8 played
-        self.any_card = False
+        self.suit_in_play = False
+        self.winner_points = 0
         
-        # Start the game loop
         while not player.hand_over() and not computer.hand_over():
+            # First check if the draw pile is empty
+            if draw_pile.is_empty():
+                # Get the remaining cards from the discard and draw piles and add them together
+                discard_pile_cards = discard_pile.get_cards()
+                draw_pile_cards = draw_pile.get_cards()
+                all_cards = discard_pile_cards + draw_pile_cards
+                
+                # Create a new draw pile with the remaining cards from discard and draw pile
+                draw_pile = DrawPile(other_cards=all_cards)
+                draw_pile.shuffle()
+                
+                # Create a new discard pile
+                discard_pile = DiscardPile()
+
+            print("\n*** Computer's cards are hidden. ***")
+            
             # Print the player's hand
-            print("\nYour cards are:")
+            print("\n#### Your cards ####")
             player.display_hand()
             
-            # Print computer's hand
-            print("\nComps cards are:")
-            computer.display_hand()
-            
-            # Print the top card
-            if not self.any_card:
-                print("\nThe top card is", self.top_card)
+            # Print the top card or suit in play
+            if not self.suit_in_play:
+                print("\n#### The top card is", self.top_card, "####")
             else:
-                print("\nThe suit in play is:", self.top_card_suit)
+                print("\n#### The suit in play is", self.top_card_suit, "####")
             
             # Ask for the user input
             num = self.prompt_card_num()
             
-            # Check if the player played a number or letter
             if num.isdigit():
-                # Convert num to int
                 num = int(num)
-                # Check if the number is valid
                 if self.card_in_hand(num, player):
-                    # Played card
                     played_card = player.get_card(num)
+                    # Check if the card in hand is an 8 only
+                    if player.get_num_of_cards() == 1 and played_card.value =="8":
+                        # Drop card and add it to the discard pile
+                        dropped = player.drop_card(num)
+                        discard_pile.add_card(dropped)
+                        print("\n>>> You dropped", dropped)
+                        
+                        # Prompt for a suit
+                        self.top_card_suit = self.prompt_suit()
+                        print("\n>>> You chose the suit", self.top_card_suit)
+                        
+                        # Turn the game to the chosen suit
+                        self.suit_in_play = True
+                        self.top_card = None
+                        
+                        # Draw a card from the draw pile and add it to the player's hand
+                        draw = draw_pile.draw_card()
+                        player.add_card(draw)
+                        print("\n*** You were added a card because you played an 8 as your last card ***")
                     # Check if the prev card is was an 8
-                    if self.any_card:
-                        # Check if the suit of card dropped matches selected one
+                    elif self.suit_in_play:
                         if played_card.suit == self.top_card_suit:
-                            # Player drops a card
                             dropped = player.drop_card(num)
-                            # Add the card to the discard pile
                             discard_pile.add_card(dropped)
-                            # Print Dropped card
-                            print("\nYou  dropped", dropped)
-                            # Set the suit and rank of the top card
-                            self.top_card_suit = dropped.suit
-                            self.top_card_rank = dropped.value
-                            # Turn the game to the set rank and suit
-                            self.any_card = False
-                            # Set top card to dropped
+                            print("\n>>> You  dropped", dropped)
+                            
+                            self.suit_in_play = False
                             self.top_card = dropped
-                            # Set suit to None
                             self.top_card_suit = None
                         # Check if card played is an 8
                         elif self.is_eight(played_card):
-                            # Player drops a card
                             dropped = player.drop_card(num)
-                            # Add the dropped card to the discard pile
                             discard_pile.add_card(dropped)
-                            # Choose a suit
+                            print("\n>>> You dropped", dropped)
+                            
                             self.top_card_suit = self.prompt_suit()
-                            # Print the chosen suit
-                            print("\nYou dropped {} and chose the suit {}".format(dropped, self.top_card_suit))
-                            # Turn the game to the chosen suit
-                            self.any_card = True
-                            # Set top card to None
+                            print("\n>>> You chose the suit", self.top_card_suit)
+                            
+                            self.suit_in_play = True
                             self.top_card = None
                         else:
-                            print("Please drop a card with suit {} or drop an 8 or draw a card.".format(self.top_card_suit))
+                            # Print denied card
+                            print("!!! Please drop a card with suit {} or drop an 8 or draw a card.".format(self.top_card_suit))
                             continue
                     # Check if the dropped card is an 8
                     elif self.is_eight(played_card):
-                        # Player drops a card
                         dropped = player.drop_card(num)
-                        # Add the dropped card to the discard pile
                         discard_pile.add_card(dropped)
-                        # Choose a suit
+                        print("\n>>> You dropped", dropped)
+                        
                         self.top_card_suit = self.prompt_suit()
-                        # Print the chosen suit
-                        print("\nYou dropped {} and chose the suit {}".format(dropped, self.top_card_suit))
-                        # Turn the game to the chosen suit
-                        self.any_card = True
-                        # Set top card to None
+                        print("\n>>> You chose the suit", self.top_card_suit)
+                        
+                        self.suit_in_play = True
                         self.top_card = None
                     # Check if it matches suit or rank of the top card
                     elif self.match_top_card(played_card):
-                        # Player drops a card
                         dropped = player.drop_card(num)
-                        # Add the card to the discard pile
                         discard_pile.add_card(dropped)
-                        # Print Dropped card
-                        print("\nYou  dropped", dropped)
-                        # Set the suit and rank of the top card
+                        print("\n>>> You  dropped", dropped)
+                        
                         self.top_card_suit = dropped.suit
-                        self.top_card_rank = dropped.value
+                        self.top_card = dropped
                     else:
-                        # Player draws a card
-                        draw = draw_pile.draw_card()
-                        player.add_card(draw)
                         # Print denied card
-                        print("\nThe card was denied. You were given {} as a penalty.".format(draw))
+                        print("\n!!! The card does not match the suit or rank of the top card. Please try again !!!")
+                        continue
                 else:
                     # Print a message of not a valid card number in hand
-                    print("\nThe number you entered is not a valid card number.")
+                    print("\n!!! The number you entered is not a valid card number !!!")
                     continue
             else:
-                # Draw a card from the draw pile
+                # Draw a card from the draw pile and add to the player's hand
                 draw = draw_pile.draw_card()
                 player.add_card(draw)
-                print("\nYou drew {}".format(draw))
+                print("\n>>> You drew", draw)
             
             if player.hand_over():
                 self.winner = "player"
                 break
             
-            print("\nPlayed 8 after player:", self.any_card)
-            
             ### Let the computer to play ###
             self.comp_suit, self.comp_dropped = computer.play(top_card=self.top_card, specific_suit=self.top_card_suit)
-                
-            print("\nComputer's choice is: suit -> {}, card -> {}".format(self.comp_suit, self.comp_dropped))
         
-            if self.comp_suit and self.comp_dropped:
-                # Add the card in the discard pile
+            if self.comp_suit:
                 discard_pile.add_card(self.comp_dropped)
-                # Set the suit in play
                 self.top_card_suit = self.comp_suit
-                # Print the chosen suit
-                print("\nThe computer dropped ", self.comp_dropped, "and chose the suit", self.top_card_suit)
-                # Set the rank to the chosen one
+                print("\n*** The computer dropped ", self.comp_dropped, "and chose the suit", self.top_card_suit, "***")
+
                 self.top_card_suit = self.comp_suit
-                # Turn the game to the chosen suit
-                self.any_card = True
-                # Set top card to None
+                self.suit_in_play = True
                 self.top_card = None
-            if not self.comp_suit and self.comp_dropped:
+                
+                # Check if its the only card remainining
+                if computer.hand_over():
+                    # Draw a card and add it to the computer's hand
+                    draw = draw_pile.draw_card()
+                    computer.add_card(draw)
+                    print("\n*** The computer drew a card because it played an 8 as the last card ***")
+            
+            if self.comp_suit == None and self.comp_dropped:
                 # Add the card in the discard pile
                 discard_pile.add_card(self.comp_dropped)
                 # Notify the player what card the computer dropped
-                print("\nThe computer dropped ", self.comp_dropped)
-                # Set the suit and rank of the top card
+                print("\n*** The computer dropped ", self.comp_dropped, "***")
                 self.top_card_suit = self.comp_dropped.suit
-                self.top_card_rank = self.comp_dropped.value
-                # Change the specific suit play
-                self.any_card = False
-                # Set top card to dropped
+                self.suit_in_play = False
                 self.top_card = self.comp_dropped
-                # Set suit to None
                 self.top_card_suit = None
-            if not self.comp_suit and not self.comp_dropped:
-                # Draw a card
+                
+            if self.comp_suit == None and self.comp_dropped == None:
+                # Draw a card and add it to the computer's hand
                 draw = draw_pile.draw_card()
                 computer.add_card(draw)
-#                # Print the desicion to the screen
-#                print("\nThe computer drew a card!")
+                print("\n*** The computer drew a card ***")
                 
             if computer.hand_over():
                 self.winner = "computer"
                 break
-#            
-            print("\nPlayed 8 after computer:", self.any_card)
-#            # Print the game state
-#            print("\nDraw pile empty:", draw_pile.is_empty())
+    
+        print("\n######################")
+        print("#### Hand over! ######")
+        print("######################")
+              
+        # Print opponent's hand
+        print("\nOpponent's remaining cards:")
+        if self.winner == "player":
+            computer.display_hand()
+            self.winner_points = computer.get_hand_value()
+        else:
+            player.display_hand()
+            self.winner_points = player.get_hand_value()
         
-        print("\nGame over!")
-        # Print comps hand
-        print("\nComputer's cards:")
-        computer.display_hand()
         # Print winner
-        print("\nThe {} wins!".format(self.winner))
+        print("\n######################")
+        print("\n* The winner of the hand is the {} with {} points *".format(self.winner, self.winner_points))
+        print("\n######################")
+              
+        return self.winner, self.winner_points
             
     def prompt_card_num(self):
         '''
@@ -306,6 +262,10 @@ class Game:
         return num
     
     def is_eight(self, card):
+        '''
+        Checks if the card is an 8.
+        Returns True if it is, False otherwise.
+        '''
         if card.value.isdigit() and int(card.value) == 8:
             return True
         return False
@@ -343,16 +303,22 @@ class Game:
         Checks if the card matches the top card's suit or rank.
         Returns True if it matches, False otherwise.
         '''
-        if card.suit == self.top_card_suit or card.value == self.top_card_rank:
+        if card.suit == self.top_card.suit or card.value == self.top_card.value:
             return True
         return False
+    
+    def update_player_points(self, winner, points):
+        '''
+        Updates the player points after each hand.
+        '''
+        if winner == "player":
+            self.player_points += points
+        else:
+            self.computer_points += points
 
 
 if __name__ == '__main__':
     game = Game()
-
-
     
-
 
 
