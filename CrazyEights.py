@@ -55,7 +55,7 @@ class DiscardPile:
         Returns (Card object) a card.
         '''
         if len(self.cards) > 1:
-            return self.cards.pop(0)
+            return self.cards.pop(-1)
         
     def shuffle(self):
         '''

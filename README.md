@@ -26,6 +26,10 @@ and the points assigned to the winner. Since this game is a two player game (you
 
 Currently only the commandline version is available.
 
+## The GUI version
+
+It is under development. Run the `crazy_eights_gui.py` file to see the progress.
+
 ## About the game's AI
 
 The game's AI is fair but not simple. Play smart and win!
