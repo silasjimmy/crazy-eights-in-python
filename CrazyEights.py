@@ -101,6 +101,9 @@ class Hand:
         self.cards = cards
         self.value = 0
         
+    def get_cards(self):
+        return self.cards
+        
     def get_num_of_cards(self):
         '''
         Returns (int) the number of cards in the hand.
