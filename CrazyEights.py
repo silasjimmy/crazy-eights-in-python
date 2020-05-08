@@ -8,6 +8,8 @@ Created on Wed Apr 22 10:05:30 2020
 
 import random
 
+SUITS = ["Diamonds", "Clubs", "Hearts", "Spades"]
+
 class Card:
     '''
     Defines a card.
@@ -208,6 +210,56 @@ class Computer(Hand):
                 return index, card
         return None, None
     
+    def play1(self, top_card, suit_in_play):
+        drop_match_options = []
+        drop_suit_options = []
+        chosen_suit, card_to_drop = None, None
+        for index, card in enumerate(self.cards):
+            if card.value == "8":
+                # Drop the card
+                card_to_drop = self.drop_card(index)
+                # Find the suit with many cards
+                suit_totals = {}
+                # Calculate the totals
+                for suit in SUITS:
+                    suit_totals[suit] = 0
+                    for card in self.cards:
+                        if card.suit == suit:
+                            suit_totals[suit] += 1
+                # Find the suit with many cards
+                s, l = None, 0
+                for suit_name, total in list(suit_totals.items()):
+                    if total > l:
+                        s = suit_name
+                        l = total
+                chosen_suit = s
+                return chosen_suit, card_to_drop
+            elif suit_in_play and card.suit == suit_in_play:
+                drop_suit_options.append(card)
+            else:
+                if card.value == top_card.value or card.suit == top_card.suit:
+                    drop_match_options.append(card)
+        # Check the cards to compare
+        if suit_in_play:
+            to_compare = drop_suit_options[:]
+            print("Compare with the suit options:")
+        else:
+            to_compare = drop_match_options[:]
+            print("Compare with the match options:")
+        # Find the card with highest value
+        high_value, card_index = 0, None
+        for index, card in enumerate(to_compare):
+            if card.value.isdigit():
+                if int(card.value) > high_value:
+                    high_value = card.value
+                    card_index = index
+            else:
+                high_value = 10
+                card_index = index
+        # Drop the card
+        card_to_drop = self.drop_card(card_index)
+        return chosen_suit, card_to_drop
+    
     def play(self, top_card=None, specific_suit=None):
         '''
         Defines how the computer plays.
@@ -256,3 +308,15 @@ class Computer(Hand):
         
         # Return if no card is found
         return None, None
+    
+#comp_cards = [Card("Spades", "2"), Card("Spades", "K"), Card("Diamonds", "9"), Card("Clubs", "Q")]
+#comp = Computer(comp_cards)
+#comp.display_hand()
+#top_card = Card("Hearts", "2")
+#suit_in_play = None
+#s, c = comp.play1(top_card, suit_in_play)
+#print("Suit chosen:", s, "### Card to drop:", c)
+
+
+    
+    

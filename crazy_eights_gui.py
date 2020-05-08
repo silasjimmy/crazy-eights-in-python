@@ -27,18 +27,23 @@ class Game(tk.Tk):
         self.resizable(False, False)
         
         # Center the window
-        screen_width = self.winfo_screenwidth()
-        screen_height = self.winfo_screenheight()
-        x = (screen_width / 2) - (WINDOW_WIDTH / 2)
-        y = (screen_height / 2) - (WINDOW_HEIGHT / 2)
+#        screen_width = self.winfo_screenwidth()
+#        screen_height = self.winfo_screenheight()
+#        x = (screen_width / 2) - (WINDOW_WIDTH / 2)
+#        y = (screen_height / 2) - (WINDOW_HEIGHT / 2)
+        x, y = self.center_window(WINDOW_WIDTH, WINDOW_HEIGHT)
         self.geometry("%dx%d+%d+%d" % (WINDOW_WIDTH, WINDOW_HEIGHT, x, y))
         
         # Game variables
         self.player_points = 0
         self.computer_points = 0
+        
+        # GUI variables
         self.player_points_str = tk.StringVar()
         self.computer_points_str = tk.StringVar()
+        self.suit_choice = tk.StringVar()
         self.suit_in_play = None
+        
         # Set the point strings
         self.player_points_str.set("Player points: " +  str(self.player_points))
         self.computer_points_str.set("Computer points: " +  str(self.computer_points))
@@ -47,62 +52,53 @@ class Game(tk.Tk):
         # Creating the game screen
         self.game_screen = tk.Frame(self, width=800, height=600, bg="green")
         self.game_screen.pack_propagate(0)
-        # Create the draw pile and shuffle it
-        self.draw_pile = DrawPile()
-        self.draw_pile.shuffle()
-        # Deal the players their cards
-        player_cards = self.draw_pile.deal_player_cards()
-        computer_cards = self.draw_pile.deal_player_cards()
-        # Create the players' hands
-        self.player = Hand(player_cards)
-        self.computer = Computer(computer_cards)
-        # Create the discard pile
-        self.discard_pile = DiscardPile()
-        self.top_card = self.draw_pile.draw_card()
-        self.discard_pile.add_card(self.top_card)
+        
         # Points labels
         self.player_points_label = tk.Label(self.game_screen, textvar=self.player_points_str, font="Arial 15 bold", fg="white", bg="green")
         self.comp_points_label = tk.Label(self.game_screen, textvar=self.computer_points_str, font="Arial 15 bold", fg="white", bg="green")
-        # Display the computer's hand
-        self.display_computer_hand(f_time=True, reveal=True)
-        # Display the draw and discard pile
-        self.display_draw_pile()
-        self.display_discard_pile(f_time=True)
+        
         # Pack the points labels
         self.player_points_label.pack(side=tk.RIGHT, anchor=tk.S, padx=(0, 20), pady=(0, 15))
         self.comp_points_label.pack(side=tk.LEFT, anchor=tk.N, padx=(20, 0), pady=(15, 0))
-        # Display the player's hand
-        self.display_player_hand(f_time=True)
         
         #### Creating the intro screen ####
         # Creating the intro screen
         self.intro_screen = tk.Frame(self, width=800, height=600, bg="white")
         self.intro_screen.pack_propagate(0)
+        
         # Creating the intro message
         self.intro_msg = tk.Label(self.intro_screen, text="Welcome to the game Crazy Eights!", font="Arial 20 bold", bg="white")
+        
         # Creating the play and quit buttons
         self.play_btn = tk.Button(self.intro_screen, text="Start", font=5, width=25, command=self.start_game)
         self.quit_btn = tk.Button(self.intro_screen, text="Quit", font=5, width=25, command=self.quit_game)
-#        # Coords to place intro widgets
-#        msg_x = (WINDOW_WIDTH - self.intro_msg.winfo_reqwidth()) // 2
-#        btn_x = (WINDOW_WIDTH - (WINDOW_PADDING + self.play_btn.winfo_reqwidth()))
-#        btn_y = WINDOW_HEIGHT - ((WINDOW_PADDING * 2) + self.play_btn.winfo_reqheight())
-#        # Placing widgets to the intro screen
-#        self.intro_msg.place(x=msg_x, y=250)
-#        self.play_btn.place(x=WINDOW_PADDING, y=btn_y)
-#        self.quit_btn.place(x=btn_x, y=btn_y)
-#        self.make_dragable(self.play_btn)
-#        self.intro_screen.pack_propagate(0)
-#        self.intro_screen.pack(side=tk.LEFT, anchor=tk.N)
-        self.game_screen.pack(side=tk.LEFT, anchor=tk.N)
+        
+        # Coords to place intro widgets
+        msg_x = (WINDOW_WIDTH - self.intro_msg.winfo_reqwidth()) // 2
+        btn_x = (WINDOW_WIDTH - (WINDOW_PADDING + self.play_btn.winfo_reqwidth()))
+        btn_y = WINDOW_HEIGHT - ((WINDOW_PADDING * 2) + self.play_btn.winfo_reqheight())
+       
+        # Placing widgets to the intro screen
+        self.intro_msg.place(x=msg_x, y=250)
+        self.play_btn.place(x=WINDOW_PADDING, y=btn_y)
+        self.quit_btn.place(x=btn_x, y=btn_y)
+        self.make_dragable(self.play_btn)
+        self.intro_screen.pack_propagate(0)
+        self.intro_screen.pack(side=tk.LEFT, anchor=tk.N)
+        
+    def center_window(self, window_width, window_height):
+        screen_width = self.winfo_screenwidth()
+        screen_height = self.winfo_screenheight()
+        x_center = (screen_width - window_width) / 2
+        y_center = (screen_height - window_height) / 2
+        return x_center, y_center
         
     def start_game(self):
         '''
         Starts the game by clearing the intro screen and displaying the game screen.
         '''
-        pass
-#        self.intro_screen.pack_forget()
-#        self.game_screen.pack(side=tk.LEFT, anchor=tk.N)
+        self.intro_screen.pack_forget()
+        self.play_game()
 #        msg.showinfo("Crazy Eights", "The goal is to reach 100 points. The first player to get the points is the winner. \nStart the game!")
         
     def quit_game(self):
@@ -110,6 +106,36 @@ class Game(tk.Tk):
         Destroys the game window.
         '''
         self.after(300, self.destroy)
+        
+    def play_game(self):
+        # Create the draw pile and shuffle it
+        self.draw_pile = DrawPile()
+        self.draw_pile.shuffle()
+        
+        # Deal the players their cards
+        player_cards = self.draw_pile.deal_player_cards()
+        computer_cards = self.draw_pile.deal_player_cards()
+        
+        # Create the players' hands
+        self.player = Hand(player_cards)
+        self.computer = Computer(computer_cards)
+        
+        # Create the discard pile
+        self.discard_pile = DiscardPile()
+        self.top_card = self.draw_pile.draw_card()
+        self.discard_pile.add_card(self.top_card)
+        
+        # Display the computer's hand
+        self.display_computer_hand(f_time=True, reveal=True)
+        
+        # Display the draw and discard pile
+        self.display_draw_pile()
+        self.display_discard_pile(f_time=True)
+        
+        # Display the player's hand
+        self.display_player_hand(f_time=True)
+        
+        self.game_screen.pack(side=tk.LEFT, anchor=tk.N)
         
     def card_name(self, card):
         '''
@@ -212,11 +238,11 @@ class Game(tk.Tk):
         draw = self.draw_pile.draw_card()
         # Add the card to the player's hand
         self.player.add_card(draw)
-        # Display the player's hand
-        self.display_player_hand()
+#        # Display the player's hand
+#        self.display_player_hand()
         
         ### Let the computer play ###
-        self.computer_turn()
+        self.computer_play()
         # Check if computer hand is over
         if self.computer.hand_over():
             msg.showinfo("Hand over", "The computer won the hand!")
@@ -244,6 +270,38 @@ class Game(tk.Tk):
         if card.value.isdigit() and int(card.value) == 8:
             return True
         return False
+    
+    def add_more_card(self, hand):
+        draw = self.draw_pile.draw_card()
+        hand.add_card(draw)
+        print("The hand was added a card because played 8 as the last card.")
+        
+    def prompt_suit(self):
+        # Creating the suit window
+        suit_window = tk.Toplevel(bg="white")
+        suit_window.title("Choose a suit")
+        # Width and Height of the suit window
+        suit_win_width, suit_win_height = 250, 200
+        # Centering the suit window
+        x, y = self.center_window(suit_win_width, suit_win_height)
+        suit_window.geometry("%dx%d+%d+%d" % (suit_win_width, suit_win_height, x, y))
+        SUITS = [("Diamonds", "Diamonds"), 
+                 ("Hearts", "Hearts"),
+                 ("Spades", "Spades"), 
+                 ("Clubs", "Clubs")]
+        for suit, suit_choice in SUITS:
+            s = tk.Radiobutton(suit_window, text=suit, font="Arial 12 bold", variable=self.suit_choice, value=suit_choice)
+            s.pack(anchor=tk.CENTER, pady=(10, 5))
+    
+    def drop_card(self, card_pos):
+        # Drop the card
+        drop = self.player.drop_card(card_pos)
+        # Add it to the discard pile
+        self.discard_pile.add_card(drop)
+        # Diplay the discard pile
+        self.display_discard_pile()
+        # Display the player hand
+        self.display_player_hand()
         
     def on_drag_start(self, event):
         widget = event.widget
@@ -252,6 +310,8 @@ class Game(tk.Tk):
         # Card's original coords
         self.original_x = widget.winfo_x()
         self.original_y = widget.winfo_y()
+        # Track the card if dropped
+        self.card_dropped = False
         
     def on_drag_motion(self, event):
         widget = event.widget
@@ -273,29 +333,50 @@ class Game(tk.Tk):
             # Get the card that has been dropped
             position = self.moved_card(widget)
             dropped = self.player.get_card(position)
-            if self.is_eight(dropped) or self.match_top_card(dropped):
-                # Drop the card
-                drop = self.player.drop_card(position)
-                # Add it to the discard pile
-                self.discard_pile.add_card(drop)
-                # Diplay the discard pile
-                self.display_discard_pile()
+            if (self.suit_in_play == dropped.suit and not self.match_top_card(dropped)) or (self.match_top_card(dropped) and self.suit_in_play == None) or self.is_eight(dropped):
+                # Check if the play is based on a suit
+                if self.suit_in_play:
+                    if dropped.suit == self.suit_in_play:
+                        # Drop the card
+                        self.drop_card(position)
+                        # Set the suit to None
+                        self.suit_in_play = None
+                        print("Player dropped a card matching", self.suit_in_play)
+                    elif self.is_eight(dropped):
+                        # Drop the card
+                        self.drop_card(position)
+                        # Prompt for a suit
+                        self.prompt_suit()
+                        self.suit_in_play = "Diamonds"
+                        print("Player prompted the suit", self.suit_in_play)
+                        # Check if last play was an 8
+                        if self.player.hand_over():
+                            self.add_more_card(self.player)
+                else:
+                    # Check if the play is a normal one
+                    if self.match_top_card(dropped):
+                        # Drop the card
+                        self.drop_card(position)
+                    elif self.is_eight(dropped):
+                        # Drop the card
+                        self.drop_card(position)
+                        # Prompt for a suit
+                        self.prompt_suit()
+                        self.suit_in_play = "Hearts"
+                        print("Player prompted the suit", self.suit_in_play)
+                        # Check if last play was an 8
+                        if self.player.hand_over():
+                            self.add_more_card(self.player)
+                            
                 # Display the player hand
                 self.display_player_hand()
-                if self.is_eight(dropped):
-                    self.suit_in_play = drop.suit
-                    # Prompt for a suit
-                    print("Player prompt a suit!")
-                    if self.player.hand_over():
-                        draw = self.draw_pile.draw_card()
-                        self.player.add_card(draw)
-                        print("Player added a card because played 8 as the last card.")
-                # Check if there is a hand over
+                    
+                # Check if the player's hand is over
                 if self.player.hand_over():
                     msg.showinfo("Hand over", "Congratulations! You win the hand!")
                     
                 ### Let the computer play ###
-                self.computer_turn()
+                self.computer_play()
                 
                 # Check if computer hand is over
                 if self.computer.hand_over():
@@ -305,30 +386,33 @@ class Game(tk.Tk):
         else:
             widget.place(x=self.original_x, y=self.original_y)
             
-    def computer_turn(self):
+    def computer_play(self):
         self.top_card = self.discard_pile.get_top_card()
+        print("\nSuit in play:", self.suit_in_play)
         
-        comp_suit, comp_dropped = self.computer.play(top_card=self.top_card, specific_suit=self.suit_in_play)
-        
+        comp_suit, comp_dropped = self.computer.play1(self.top_card, self.suit_in_play)
+        print("Comp suit:", comp_suit, "Comp dropped:", comp_dropped)
         if comp_suit:
             # Add the card to the discard pile
             self.discard_pile.add_card(comp_dropped)
+            # Display the discard pile
+            self.display_discard_pile()
             # Set the suit in play to the chosen suit by comp
             self.suit_in_play = comp_suit
+            # Notify the player of the suit chosen by computer
+            msg.showinfo("Suit choice", "The computer chose the suit " + self.suit_in_play)
 #            # Check if its the only card remainining
 #            if self.computer.hand_over():
 #                # Draw a card and add it to the computer's hand
 #                draw = self.draw_pile.draw_card()
 #                self.computer.add_card(draw)
-            print("Computer dropped", comp_dropped, "and chose suit", comp_suit)
         if comp_suit == None and comp_dropped:
-#            # Add the card in the discard pile
+            # Add the card in the discard pile
             self.discard_pile.add_card(comp_dropped)
             # Display the discard pile
             self.display_discard_pile()
             # Set the suit in play to none
             self.suit_in_play = None
-            print("Computer dropped", comp_dropped)
         if comp_suit == None and comp_dropped == None:
             # Draw a card and add it to the computer's hand
             draw = self.draw_pile.draw_card()
