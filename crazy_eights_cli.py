@@ -91,6 +91,8 @@ class Game:
                 discard_pile = DiscardPile()
 
             print("\n*** Computer's cards are hidden. ***")
+#            print("Computer cards are:")
+#            computer.display_hand()
             
             # Print the player's hand
             print("\n#### Your cards ####")
@@ -191,7 +193,7 @@ class Game:
                 break
             
             ### Let the computer to play ###
-            self.comp_suit, self.comp_dropped = computer.play(top_card=self.top_card, specific_suit=self.top_card_suit)
+            self.comp_suit, self.comp_dropped = computer.play(top_card=self.top_card, self.top_card_suit)
         
             if self.comp_suit:
                 discard_pile.add_card(self.comp_dropped)

@@ -162,7 +162,7 @@ class Hand:
         for i, card in enumerate(self.cards):
             print("({}) -> {}".format(i, card))
             
-    def hand_over(self):
+    def hand_empty(self):
         '''
         Checks if the hand is over or not.
         Returns True if it is, False otherwise.
@@ -178,42 +178,17 @@ class Computer(Hand):
     def __init__(self, cards):
         super().__init__(cards)
         
-    def get_playable_card(self, top_card):
+    def play(self, top_card, suit_in_play):
         '''
-        Checks for a card matching the suit or rank of the top card in the discard pile.
-        top_card (Card object): The card on the top of the discard pile.
-        Returns (int, Card object) the index of the card found and the card, None if not.
+        Makes the computer play.
+        top_card (Card object): The top card in the discard pile.
+        suit_in_play (str): The chosen suit in case the player dropped an 8.
+        Returns (Card, str) the card to drop and the suit chosen if it played an 8.
         '''
-        for index, card in enumerate(self.cards):
-            if card.suit == top_card.suit or card.value == top_card.value:
-                return index, card
-        return None, None
-    
-    def check_for_eight(self):
-        '''
-        Checks the hand for an 8.
-        Returns (int, Card object) index of the card found and the card, None if not.
-        '''
-        for index, card in enumerate(self.cards):
-            if card.value.isdigit() and int(card.value) == 8:
-                return index, card
-        return None, None
-            
-    def get_card_with_suit(self, specific_suit):
-        '''
-        Gets the card with the specified suit.
-        specific_suit (str): The suit to find.
-        Returns (int, Card object) index of the card found and the card, None if not.
-        '''
-        for index, card in enumerate(self.cards):
-            if card.suit == specific_suit:
-                return index, card
-        return None, None
-    
-    def play1(self, top_card, suit_in_play):
         drop_match_options = []
         drop_suit_options = []
         chosen_suit, card_to_drop = None, None
+        
         for index, card in enumerate(self.cards):
             if card.value == "8":
                 # Drop the card
@@ -226,6 +201,7 @@ class Computer(Hand):
                     for card in self.cards:
                         if card.suit == suit:
                             suit_totals[suit] += 1
+                            
                 # Find the suit with many cards
                 s, l = None, 0
                 for suit_name, total in list(suit_totals.items()):
@@ -239,84 +215,28 @@ class Computer(Hand):
             else:
                 if card.value == top_card.value or card.suit == top_card.suit:
                     drop_match_options.append(card)
+                    
         # Check the cards to compare
         if suit_in_play:
             to_compare = drop_suit_options[:]
-            print("Compare with the suit options:")
         else:
             to_compare = drop_match_options[:]
-            print("Compare with the match options:")
+            
         # Find the card with highest value
-        high_value, card_index = 0, None
-        for index, card in enumerate(to_compare):
-            if card.value.isdigit():
-                if int(card.value) > high_value:
-                    high_value = card.value
-                    card_index = index
+        high_value, best_play = 0, None
+        for card in to_compare:
+            if card.value.isnumeric():
+                card_value = int(card.value)
+                if card_value > high_value:
+                    high_value = card_value
+                    best_play = card
             else:
                 high_value = 10
-                card_index = index
+                best_play = card
+                
         # Drop the card
-        card_to_drop = self.drop_card(card_index)
+        if best_play:
+            card_index = self.cards.index(best_play)
+            card_to_drop = self.drop_card(card_index)
+            
         return chosen_suit, card_to_drop
-    
-    def play(self, top_card=None, specific_suit=None):
-        '''
-        Defines how the computer plays.
-        top_card (Card object): The top card in the discard pile.
-        specific_suit (str): The suit chosen by the player.
-        Returns (str, Card object) the suit chosen in case an 8 was played and the card played.
-        '''
-        suit = None
-        
-        # Play if it is a specific suit
-        if specific_suit:
-            # PLay card if found a card with specific suit
-            index, card = self.get_card_with_suit(specific_suit)
-            if card:
-                if card.value.isdigit() and int(card.value) == 8:
-                    suits = list(set([c.suit for c in self.cards if c.suit != card.suit]))
-                    suit = random.choice(suits)
-                card = self.drop_card(index)
-                return suit, card
-            
-            # Play card if found no card and there is an 8
-            index, card = self.check_for_eight()
-            if card:
-                if self.get_num_of_cards() == 1:
-                    suits = ["Diamonds", "Clubs", "Spades", "Hearts"]
-                else:
-                    suits = list(set([c.suit for c in self.cards if c.suit != card.suit]))
-                suit = random.choice(suits)
-                card = self.drop_card(index)
-                return suit, card
-        
-        if top_card:
-            # Play if it is has a card matching the top card in discard pile
-            index, card = self.get_playable_card(top_card)
-            if card:
-                card = self.drop_card(index)
-                return None, card
-            
-            # Play if has an 8
-            index, card = self.check_for_eight()
-            if card:
-                suits = list(set([c.suit for c in self.cards if c.suit != card.suit]))
-                suit = random.choice(suits)
-                card = self.drop_card(index)
-                return suit, card
-        
-        # Return if no card is found
-        return None, None
-    
-#comp_cards = [Card("Spades", "2"), Card("Spades", "K"), Card("Diamonds", "9"), Card("Clubs", "Q")]
-#comp = Computer(comp_cards)
-#comp.display_hand()
-#top_card = Card("Hearts", "2")
-#suit_in_play = None
-#s, c = comp.play1(top_card, suit_in_play)
-#print("Suit chosen:", s, "### Card to drop:", c)
-
-
-    
-    
