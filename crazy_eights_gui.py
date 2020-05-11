@@ -110,7 +110,7 @@ class Game(tk.Tk):
         self.top_card = self.draw_pile.draw_card()
         self.discard_pile.add_card(self.top_card)
         
-        self.display_computer_hand(f_time=True, reveal=True)
+        self.display_computer_hand(f_time=True)
         self.display_draw_pile()
         self.display_discard_pile(f_time=True)
         self.display_player_hand(f_time=True)
@@ -409,7 +409,7 @@ class Game(tk.Tk):
         if comp_suit:
             self.discard_pile.add_card(comp_dropped)
             self.display_discard_pile()
-            self.display_computer_hand(reveal=True)
+            self.display_computer_hand()
             self.suit_in_play = comp_suit
             msg.showinfo("Suit choice", "The computer chose the suit " + self.suit_in_play)
             
@@ -421,17 +421,18 @@ class Game(tk.Tk):
             self.discard_pile.add_card(comp_dropped)
             self.display_discard_pile()
             self.suit_in_play = None
-            self.display_computer_hand(reveal=True)
+            self.display_computer_hand()
             
         if comp_suit == None and comp_dropped == None:
             draw = self.draw_pile.draw_card()
             self.computer.add_card(draw)
-            self.display_computer_hand(reveal=True)
+            self.display_computer_hand()
         
         self.display_player_hand()
         
     def hand_over(self, winner):
         if winner == "player":
+            self.display_computer_hand(reveal=True)
             player_points = self.computer.get_hand_value()
             self.player_points += player_points
             msg.showinfo("Hand over", "Congratulations! You win the hand with " + str(player_points) + " points!")
@@ -458,6 +459,7 @@ class Game(tk.Tk):
         winner (str): The winner of the game.
         '''
         if winner == "player":
+            self.display_computer_hand(reveal=True)
             new_game = msg.askquestion("Game over!", "Congratulations!!! You won the game with " + str(self.player_points) + "!\nPlay another game?")
         else:
             new_game = msg.askquestion("Game over!", "Aww, sorry buddy. The computer won the game with " + str(self.computer_points) + "!\nPlay another game?")
