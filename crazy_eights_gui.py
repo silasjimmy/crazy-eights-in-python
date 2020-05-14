@@ -153,7 +153,7 @@ class Game(tk.Tk):
         for i, card_label in enumerate(self.player_card_labels):
             x_pad = i * CARD_PAD_X
             card_label.place(x=x+x_pad, y=y)
-            self.make_dragable(card_label)   
+            self.make_dragable(card_label)
             
     def display_computer_hand(self, f_time=False, reveal=False):
         '''
